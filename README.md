@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposta de Honorários | Casseb & Macdovel Advocacia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Counsel -->
+    <!-- Application Structure Plan: A single-page dashboard designed for easy comparison. The core is an interactive selector with three buttons, one for each proposal. Clicking a button dynamically updates a central display area, showing the specific fees, a visual chart of the initial investment, and a description of the value proposition. This structure was chosen to transform a linear document into a decision-making tool, focusing the user on comparing the options while keeping common details (scope, clauses) accessible in collapsible sections below. This enhances clarity and usability by isolating the key choice. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Three pricing tiers -> Goal: Compare -> Viz: Interactive buttons linked to a dynamic display area -> Interaction: Click to update content -> Justification: Allows for direct, side-by-side comparison of options, which is the primary task for the user. -> Library/Method: Vanilla JS.
+        - Report Info: Initial Fees -> Goal: Compare -> Viz: Bar Chart -> Interaction: Updates with proposal selection -> Justification: Visually represents the upfront financial commitment, making the difference between proposals immediately apparent. -> Library/Method: Chart.js (Canvas).
+        - Report Info: Success Fees -> Goal: Inform -> Viz: Dynamic text and chart tooltips -> Interaction: Updates with proposal selection -> Justification: Clearly communicates the variable component of the fee without misrepresenting it visually as a fixed amount. -> Library/Method: Vanilla JS, Chart.js tooltips.
+        - Report Info: Detailed clauses and scope -> Goal: Organize -> Viz: Collapsible accordion sections -> Interaction: Click to expand/collapse -> Justification: Reduces information overload on the initial view, keeping the interface clean and focused on the decision. -> Library/Method: HTML <details> tag.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 280px;
+            max-height: 320px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 320px;
+            }
+        }
+        .details-marker {
+            color: #1e40af; 
+        }
+        .details-content {
+            border-left: 2px solid #e5e7eb;
+            padding-left: 1rem;
+            margin-top: 0.5rem;
+        }
+        .active-proposal {
+            background-color: #1e40af;
+            color: white;
+            border-color: #1e40af;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-slate-800">
+
+    <div class="container mx-auto max-w-5xl p-4 md:p-8">
+        
+        <header class="text-center border-b border-stone-200 pb-6 mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-900">Proposta de Honorários Profissionais</h1>
+            <p class="text-slate-600 mt-2">Mandado de Segurança Preventivo</p>
+            <div class="mt-4 text-sm text-slate-500">
+                <p>De: <span class="font-semibold">Casseb & Macdovel Advocacia</span></p>
+                <p>Para: <span class="font-semibold">Karla Risuenho</span></p>
+                <p>Data: <span class="font-semibold">15 de Julho de 2025</span></p>
+            </div>
+        </header>
+
+        <main>
+            <section id="introduction" class="mb-10 text-center">
+                 <p class="text-lg text-slate-700 max-w-3xl mx-auto">
+                    Apresentamos esta proposta para a prestação de serviços jurídicos visando impedir sua eliminação indevida no PSS da Aeronáutica e assegurar sua participação nas demais etapas. Abaixo, você encontrará três modelos de contratação para que possa escolher o que melhor se alinha às suas expectativas.
+                 </p>
+            </section>
+
+            <section id="interactive-proposals" class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-stone-200">
+                <h2 class="text-2xl font-bold text-center text-blue-900 mb-6">Escolha o Modelo de Contratação</h2>
+                
+                <div id="proposal-buttons" class="flex flex-col sm:flex-row justify-center gap-3 mb-8">
+                </div>
+
+                <div id="proposal-details" class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                    <div class="text-center lg:text-left">
+                        <h3 id="proposal-title" class="text-2xl font-bold text-blue-800 mb-2"></h3>
+                        <p id="proposal-concept" class="text-slate-600 mb-6"></p>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                <p class="text-sm font-semibold text-blue-700">TAXA DE INGRESSO (INICIAL)</p>
+                                <p id="proposal-initial-fee" class="text-3xl font-bold"></p>
+                            </div>
+                            <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                                <p class="text-sm font-semibold text-emerald-700">HONORÁRIOS DE ÊXITO</p>
+                                <p id="proposal-success-fee" class="text-3xl font-bold"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 bg-stone-100 p-4 rounded-lg text-sm text-slate-700">
+                           <strong class="font-semibold text-slate-800">Valor para o Cliente:</strong>
+                           <p id="proposal-value" class="mt-1"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="feesChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="common-details" class="mt-10 space-y-4">
+                <details class="bg-white p-5 rounded-lg shadow-sm border border-stone-200 cursor-pointer">
+                    <summary class="font-semibold text-lg text-slate-700 flex justify-between items-center">
+                        Escopo dos Serviços Propostos
+                        <span class="details-marker text-2xl font-light">+</span>
+                    </summary>
+                    <div class="details-content text-slate-600 space-y-2 mt-4">
+                        <p>✓ Análise jurídica aprofundada do caso e da viabilidade.</p>
+                        <p>✓ Elaboração e protocolo da petição inicial do Mandado de Segurança.</p>
+                        <p>✓ Acompanhamento prioritário do pedido de medida liminar.</p>
+                        <p>✓ Representação e acompanhamento processual em primeira instância.</p>
+                        <p>✓ Realização de diligências necessárias e comunicação regular sobre o andamento.</p>
+                        <p class="mt-4 pt-2 border-t border-stone-200"><strong class="font-semibold text-slate-800">Não incluso:</strong> Atuação em fases recursais ou outras instâncias.</p>
+                    </div>
+                </details>
+
+                <details class="bg-white p-5 rounded-lg shadow-sm border border-stone-200 cursor-pointer">
+                    <summary class="font-semibold text-lg text-slate-700 flex justify-between items-center">
+                        Prazos e Condições
+                        <span class="details-marker text-2xl font-light">+</span>
+                    </summary>
+                    <div class="details-content text-slate-600 space-y-3 mt-4">
+                        <p><strong class="font-semibold text-slate-800">Prazo de Execução:</strong> O protocolo da petição inicial será realizado em aproximadamente 1 semana após a assinatura do contrato e recebimento dos documentos.</p>
+                        <p><strong class="font-semibold text-slate-800">Pagamento:</strong> O valor integral da Taxa de Ingresso é pago na assinatura. Parcelamento em até 4x disponível mediante acordo prévio. Honorários de êxito são devidos apenas após o sucesso da causa.</p>
+                        <p><strong class="font-semibold text-slate-800">Formas de Pagamento:</strong> Transferência bancária, Pix, Boleto e Cartão de Crédito.</p>
+                        <p><strong class="font-semibold text-slate-800">Custos Adicionais:</strong> Despesas com custas judiciais, emolumentos e outras correrão por conta do cliente, mediante aprovação prévia.</p>
+                        <p><strong class="font-semibold text-slate-800">Validade:</strong> Esta proposta é válida por 3 dias corridos.</p>
+                    </div>
+                </details>
+
+                <details class="bg-white p-5 rounded-lg shadow-sm border border-stone-200 cursor-pointer">
+                    <summary class="font-semibold text-lg text-slate-700 flex justify-between items-center">
+                        Cláusulas Contratuais Comuns
+                        <span class="details-marker text-2xl font-light">+</span>
+                    </summary>
+                    <div class="details-content text-slate-600 space-y-3 mt-4">
+                        <p><strong class="font-semibold text-slate-800">Objeto:</strong> O contrato cobre exclusivamente a atuação em primeira instância. Recursos serão objeto de nova contratação.</p>
+                        <p><strong class="font-semibold text-slate-800">Honorários de Sucumbência:</strong> Pertencem integralmente ao advogado e não compensam os honorários contratuais.</p>
+                        <p><strong class="font-semibold text-slate-800">Base de Cálculo do Êxito:</strong> O percentual de êxito incidirá sobre o valor bruto do benefício econômico obtido.</p>
+                    </div>
+                </details>
+            </section>
+            
+            <footer class="mt-12 text-center border-t border-stone-200 pt-8">
+                 <h3 class="text-xl font-bold text-blue-900 mb-4">Próximos Passos</h3>
+                 <p class="text-slate-700 max-w-2xl mx-auto mb-6">Para formalizar a aceitação, por favor, responda indicando a opção escolhida. Estamos à disposição para quaisquer esclarecimentos.</p>
+                 <p class="font-bold text-slate-800">LUCAS CASSEB DE JESUS</p>
+                 <p class="text-sm text-slate-600">Sócio Advogado | Casseb & Macdovel Advocacia</p>
+            </footer>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const proposals = [
+                {
+                    id: 0,
+                    title: "Proposta 01",
+                    subtitle: "Atendimento Premium",
+                    concept: "Máxima dedicação e serviço diferenciado, com um valor de entrada mais alto que remunera a disponibilidade e a estratégia inicial, e um percentual de êxito moderado.",
+                    initialFee: 8000,
+                    successFeeText: "10%",
+                    successFeeDescription: "sobre o proveito econômico",
+                    value: "O cliente investe mais no início para garantir um serviço premium e paga um percentual menor sobre o sucesso da causa, o que pode ser vantajoso em casos de alto valor.",
+                    color: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgba(59, 130, 246, 1)'
+                },
+                {
+                    id: 1,
+                    title: "Proposta 02",
+                    subtitle: "Equilibrada / Padrão",
+                    concept: "Equilíbrio entre o risco e o investimento para ambas as partes. Esta é uma proposta balanceada que distribui o investimento do cliente entre a fase inicial e o sucesso da demanda.",
+                    initialFee: 4000,
+                    successFeeText: "20%",
+                    successFeeDescription: "sobre o proveito econômico",
+                    value: "Um investimento inicial moderado com uma recompensa maior para o advogado em caso de sucesso, alinhando os interesses de ambos para o êxito da causa.",
+                    color: 'rgba(30, 64, 175, 0.7)',
+                    borderColor: 'rgba(30, 64, 175, 1)'
+                },
+                {
+                    id: 2,
+                    title: "Proposta 03",
+                    subtitle: "Acessível / Risco Compartilhado",
+                    concept: "Reduz a barreira de entrada, vinculando a maior parte da remuneração ao sucesso efetivo da causa. O advogado assume um risco maior, compensado por um percentual de êxito mais elevado.",
+                    initialFee: 2000,
+                    successFeeText: "1º Salário",
+                    successFeeDescription: "integral no cargo",
+                    value: "O menor desembolso inicial possível, tornando o acesso à justiça mais viável. Em contrapartida, o custo final em caso de sucesso será maior.",
+                    color: 'rgba(20, 83, 45, 0.7)',
+                    borderColor: 'rgba(20, 83, 45, 1)'
+                }
+            ];
+
+            const buttonsContainer = document.getElementById('proposal-buttons');
+            proposals.forEach((p, index) => {
+                const button = document.createElement('button');
+                button.innerHTML = `<span class="font-bold">${p.title}</span><span class="text-sm block">${p.subtitle}</span>`;
+                button.className = 'proposal-btn border-2 border-stone-300 text-slate-700 font-semibold py-3 px-6 rounded-lg transition-all duration-300 hover:bg-blue-900 hover:text-white hover:border-blue-900 w-full sm:w-auto';
+                button.dataset.index = index;
+                buttonsContainer.appendChild(button);
+            });
+
+            const proposalTitleEl = document.getElementById('proposal-title');
+            const proposalConceptEl = document.getElementById('proposal-concept');
+            const proposalInitialFeeEl = document.getElementById('proposal-initial-fee');
+            const proposalSuccessFeeEl = document.getElementById('proposal-success-fee');
+            const proposalValueEl = document.getElementById('proposal-value');
+
+            const ctx = document.getElementById('feesChart').getContext('2d');
+            let feesChart;
+
+            function formatCurrency(value) {
+                return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+            }
+
+            function updateDisplay(index) {
+                const proposal = proposals[index];
+
+                proposalTitleEl.textContent = `${proposal.title}: ${proposal.subtitle}`;
+                proposalConceptEl.textContent = proposal.concept;
+                proposalInitialFeeEl.textContent = formatCurrency(proposal.initialFee);
+                proposalSuccessFeeEl.innerHTML = `${proposal.successFeeText} <span class="text-lg font-medium text-slate-600">${proposal.successFeeDescription}</span>`;
+                proposalValueEl.textContent = proposal.value;
+
+                document.querySelectorAll('.proposal-btn').forEach((btn, i) => {
+                    btn.classList.toggle('active-proposal', i === parseInt(index));
+                });
+                
+                if (feesChart) {
+                    feesChart.destroy();
+                }
+
+                feesChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Taxa de Ingresso'],
+                        datasets: [{
+                            label: 'Valor da Taxa de Ingresso',
+                            data: [proposal.initialFee],
+                            backgroundColor: [proposal.color],
+                            borderColor: [proposal.borderColor],
+                            borderWidth: 2,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += formatCurrency(context.parsed.y);
+                                        }
+                                        return label;
+                                    },
+                                    afterLabel: function(context) {
+                                        const p = proposals[context.dataset.data.indexOf(context.raw)];
+                                        return `Êxito: ${p.successFeeText} ${p.successFeeDescription}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        return formatCurrency(value);
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            buttonsContainer.addEventListener('click', (e) => {
+                const button = e.target.closest('.proposal-btn');
+                if (button) {
+                    updateDisplay(button.dataset.index);
+                }
+            });
+            
+            document.querySelectorAll('details').forEach((detail) => {
+                detail.addEventListener('toggle', (event) => {
+                    const marker = detail.querySelector('.details-marker');
+                    if (detail.open) {
+                        marker.textContent = '−';
+                    } else {
+                        marker.textContent = '+';
+                    }
+                });
+            });
+
+            updateDisplay(1);
+        });
+    </script>
+</body>
+</html>
